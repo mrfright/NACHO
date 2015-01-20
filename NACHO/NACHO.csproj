@@ -45,6 +45,7 @@
     <Compile Include="ACHPrinter.cs" />
     <Compile Include="Batch.cs" />
     <Compile Include="BatchParser.cs" />
+    <Compile Include="BatchPrinter.cs" />
     <Compile Include="ExpectedString.cs" />
     <Compile Include="LengthCheck.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

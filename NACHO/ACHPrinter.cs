@@ -40,9 +40,22 @@
         {
             string achString = PrintInternal(ach);
             achString += "\n" + PrintHeader(ach);
-            //print batch
+            achString += "\n" + PrintBatches(ach);
             achString += "\n"+PrintControl(ach);
             return achString;
+        }
+
+        public static string PrintBatches(ACH ach)
+        {
+            string batchStr = "";
+            string prepend = "";
+            foreach (Batch batch in ach.Batches)
+            {
+                batchStr += prepend + BatchPrinter.PrintBatch(batch);
+                prepend = "\n";
+            }
+
+            return batchStr;
         }
     }
 }
