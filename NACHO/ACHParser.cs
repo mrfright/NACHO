@@ -14,7 +14,6 @@ namespace NACHO
         public const uint ACH_CONTROL_RECORD_TYPE_ASCII_VALUE   = 57;
 
         //parse whole file, calls batch parser, returns new ach
-        //takes stream reader
         public static ACH ParseStream(System.IO.StreamReader reader, out string messages)
         {
             //or leave null, return null on (initial, not all) error?
@@ -33,7 +32,7 @@ namespace NACHO
 
             bool recievedAchControlEntry = false;
             int recordType;
-            
+            string internalNewLine = "";
             while ((recordType = reader.Peek()) != -1)
             {
                 //if we recieved the ach control entry then add message that another line not expected (except empty line)
@@ -58,7 +57,8 @@ namespace NACHO
                             internalString += reader.ReadLine();
                             if (internalString != null)//shouldn't get null if recordType peek was successful, but just in case
                             {
-                                internalString += "\n";
+                                internalString = internalNewLine + internalString;
+                                internalNewLine = "\n";
                                 ++currentLineNumber;
                             }
                             else
@@ -72,36 +72,8 @@ namespace NACHO
                             string achHeader = reader.ReadLine();
                             if (achHeader != null)//shouldn't be null if recordType was successful, but just in case
                             {
-
-                                //if not 94 chars, error message
-                                string headerRecordTypeCode = achHeader.Substring(0, 1);
-                                string priorityCode = achHeader.Substring(1, 2);
-                                string immediateDestination = achHeader.Substring(3, 10);
-                                string immediateOrigin = achHeader.Substring(13, 10);
-                                string fileCreationDate = achHeader.Substring(23, 6);
-                                string fileCreationTime = achHeader.Substring(29, 4);
-                                string fileIdModifier = achHeader.Substring(33, 1);
-                                string recordSize = achHeader.Substring(34, 3);
-                                string blockingFactor = achHeader.Substring(37, 2);
-                                string formatCode = achHeader.Substring(39, 1);
-                                string immediateDestinationName = achHeader.Substring(40, 23);
-                                string immediateOriginName = achHeader.Substring(63, 23);
-                                string referenceCode = achHeader.Substring(86, 8);
-
-                                string setHeaderMessage = ach.SetHeader(internalString,
-                                                          headerRecordTypeCode,
-                                                          priorityCode,
-                                                          immediateDestination,
-                                                          immediateOrigin,
-                                                          fileCreationDate,
-                                                          fileCreationTime,
-                                                          fileIdModifier,
-                                                          recordSize,
-                                                          blockingFactor,
-                                                          formatCode,
-                                                          immediateDestinationName,
-                                                          immediateOriginName,
-                                                          referenceCode);
+                                string setHeaderMessage;
+                                ParseHeader(achHeader, ach, internalString, out setHeaderMessage);
 
                                 //TODO handle if there there's a message from setheader
                                 //if setheadermessage not null or ws then say so and add to messages
@@ -136,7 +108,7 @@ namespace NACHO
 
                             if (recordType != ACH_CONTROL_RECORD_TYPE_ASCII_VALUE)
                             {
-                                //error message
+                                //TODO consume line and give error message
                             }
                             else
                             {
@@ -144,31 +116,17 @@ namespace NACHO
                                 string achControl = reader.ReadLine();
                                 if (achControl != null)
                                 {
-                                    
-                                    //if not 94 chars then error message
-                                    string controlRecordType = achControl.Substring(0, 1);
-                                    string controlBatchCount = achControl.Substring(1, 6);
-                                    string controlBlockCount = achControl.Substring(7, 6);
-                                    string controlEntryAddendaCount = achControl.Substring(13, 8);
-                                    string controlEntryHash = achControl.Substring(21, 10);
-                                    string controlTotalDebit = achControl.Substring(31, 12);
-                                    string controlTotalCredit = achControl.Substring(43, 12);
-                                    string controlReserved = achControl.Substring(55, 39);
-
                                     string controlMessage;
-                                    controlMessage = ach.SetControl(controlRecordType,
-                                                               controlBatchCount,
-                                                               controlBlockCount,
-                                                               controlEntryAddendaCount,
-                                                               controlEntryHash,
-                                                               controlTotalDebit,
-                                                               controlTotalCredit);
 
+                                    ParseControl(achControl, ach, out controlMessage);
+                                    recievedAchControlEntry = true;
                                     //TODO if controlmessage is not null/ws then add error to message
 
-                                    //TODO check control values here or in SetControl?  Probably SetControl
+                                    //TODO check control values (number of entries, hash, etc) here or in SetControl?  Probably SetControl
 
                                     ++currentLineNumber;
+
+                                    //TODO error if any non-null/ws lines still in file at this point
                                 }
                             }
 
@@ -177,53 +135,82 @@ namespace NACHO
                     }
                     else
                     {
-                        //if a non-ach header record type, then error
-                        messages += "\nReceived what looks like a batch or entry unexpectedly before an ACH on line "+currentLineNumber.ToString()+": '" + reader.ReadLine() + "'";
+                        messages += "\nReceived what looks like a batch, entry, or ACH control unexpectedly before an ACH header on line "+currentLineNumber.ToString()+": '" + reader.ReadLine() + "'";
                         ++currentLineNumber;
-                        //didNotRecieveEntry = false;
                     }
-
-                    
-
-                    //if it is, make sure it is an ach header
-                    //(may be handled earlier right after when we handle ach header)
-                   
                 }
                 else
                 {
-                    //we got 
-
-                    //if not a record type, or is an ach header then error
-
-                    //when the end of batches is reached, should get the ach control entry, seek 
-                    //back to the beginning of that so when exit out of batch then ach next pulls out its control
-
-                    //actually, getting here is an error regardless
                     messages += "\nError on line " + currentLineNumber.ToString() + ": '" + reader.ReadLine() + "'";
                     ++currentLineNumber;
                 }
-                //needed?
-                //++currentLineNumber;
             }
 
-            //if didn't get the ach control, or header for that matter, entry then add message
-
-            //NOTE ignore emtpy line at end
+            if (didNotRecieveEntry && !recievedAchControlEntry)
+            {
+                messages += "\nDid not recieve both an ACH header and control";
+            }
 
             return ach;
         }
 
         //parse ach header line
-        public static ACH ParseHeader(string headerLine, ACH ach)
+        public static ACH ParseHeader(string achHeader, ACH ach, string internalString, out string setHeaderMessage)
         {
-            //ach.SetHeader();
+            //if achHeader null or not 94 chars, error message
+            string headerRecordTypeCode = achHeader.Substring(0, 1);
+            string priorityCode = achHeader.Substring(1, 2);
+            string immediateDestination = achHeader.Substring(3, 10);
+            string immediateOrigin = achHeader.Substring(13, 10);
+            string fileCreationDate = achHeader.Substring(23, 6);
+            string fileCreationTime = achHeader.Substring(29, 4);
+            string fileIdModifier = achHeader.Substring(33, 1);
+            string recordSize = achHeader.Substring(34, 3);
+            string blockingFactor = achHeader.Substring(37, 2);
+            string formatCode = achHeader.Substring(39, 1);
+            string immediateDestinationName = achHeader.Substring(40, 23);
+            string immediateOriginName = achHeader.Substring(63, 23);
+            string referenceCode = achHeader.Substring(86, 8);
+
+            setHeaderMessage = ach.SetHeader(internalString,
+                                      headerRecordTypeCode,
+                                      priorityCode,
+                                      immediateDestination,
+                                      immediateOrigin,
+                                      fileCreationDate,
+                                      fileCreationTime,
+                                      fileIdModifier,
+                                      recordSize,
+                                      blockingFactor,
+                                      formatCode,
+                                      immediateDestinationName,
+                                      immediateOriginName,
+                                      referenceCode);
             return ach;
         }
 
         //parse ach footer line
-        public static ACH ParseControl(string controlLine, ACH ach)
+        public static ACH ParseControl(string achControl, ACH ach, out string controlMessage)
         {
-            //ach.SetControl();
+            //TODO if achControl null or not 94 chars then error message
+            string controlRecordType = achControl.Substring(0, 1);
+            string controlBatchCount = achControl.Substring(1, 6);
+            string controlBlockCount = achControl.Substring(7, 6);
+            string controlEntryAddendaCount = achControl.Substring(13, 8);
+            string controlEntryHash = achControl.Substring(21, 10);
+            string controlTotalDebit = achControl.Substring(31, 12);
+            string controlTotalCredit = achControl.Substring(43, 12);
+            string controlReserved = achControl.Substring(55, 39);
+
+            controlMessage="";
+            controlMessage += ach.SetControl(controlRecordType,
+                                       controlBatchCount,
+                                       controlBlockCount,
+                                       controlEntryAddendaCount,
+                                       controlEntryHash,
+                                       controlTotalDebit,
+                                       controlTotalCredit,
+                                       controlReserved);
             return ach;
         }
     }

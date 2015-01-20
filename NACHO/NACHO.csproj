@@ -42,6 +42,7 @@
   <ItemGroup>
     <Compile Include="ACH.cs" />
     <Compile Include="ACHParser.cs" />
+    <Compile Include="ACHPrinter.cs" />
     <Compile Include="Batch.cs" />
     <Compile Include="BatchParser.cs" />
     <Compile Include="ExpectedString.cs" />

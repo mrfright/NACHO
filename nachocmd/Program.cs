@@ -22,6 +22,7 @@ namespace nachodump
                 string messages;
                 ACH ach = ACHParser.ParseStream(reader, out messages);
                 System.Console.WriteLine(messages);
+                System.Console.WriteLine("\n"+ACHPrinter.PrintACH(ach));
             }
         }
     }

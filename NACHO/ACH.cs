@@ -34,7 +34,7 @@ namespace NACHO
         public const uint ENTRY_HASH_LENGTH                 = 10;
         public const uint TOTAL_DEBIT_LENGTH                = 12;
         public const uint TOTAL_CREDIT_LENGTH               = 12;
-        //ACH control record has at end a reserved field of 39 blank characters
+        public const uint RESERVED_LENGTH                   = 39;
 
         public const string HEADER_RECORD_TYPE             = "1";
         public const string PRIORITY_CODE_EXPECTED_VALUE   = "01";
@@ -64,6 +64,7 @@ namespace NACHO
         public string EntryHash;
         public string TotalDebit;
         public string TotalCredit;
+        public string Reserved;
 
         public ArrayList Batches = new ArrayList();
 
@@ -141,7 +142,8 @@ namespace NACHO
                    string entryAddendaCountParam,
                    string entryHashParam,
                    string totalDebitParam,
-                   string totalCreditParam)//set just control values
+                   string totalCreditParam,
+                   string reservedParam)//set just control values
         {
             string messages = "";
 
@@ -168,6 +170,9 @@ namespace NACHO
 
             messages += LengthCheck.CheckLength("Total Credit", totalCreditParam, TOTAL_CREDIT_LENGTH);
             TotalCredit = totalCreditParam;
+
+            messages += LengthCheck.CheckLength("Reserved", reservedParam, RESERVED_LENGTH);
+            Reserved = reservedParam;
 
             return messages;
         }
