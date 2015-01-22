@@ -107,6 +107,8 @@
                         //if not 94 chars then error message
                     }
 
+                    bool expectingEntryType = true;//if true, then expecting entry, else expecting the last entry's addenda
+
                     //for testing just for the moment
                     //while not a batch control or end of file, consume a line
                     string devnull;
@@ -116,8 +118,64 @@
                     {
                         //TODO more checks needed, must be an entry type, would be an error to get an ACH header here, or some random character
                         //if not an entry record type then error message
-                        batch.Entries.Add(reader.ReadLine());
-                        ++linesRead;
+
+                        if (recordType == ACHParser.ENTRY_RECORD_TYPE_ASCII_VALUE)
+                        {
+                            if (!expectingEntryType)
+                            {
+                                //TODO log error that was expecting an addenda
+                            }
+
+                            //add entry (even if was expecting addenda)
+                            string entryMessages = "";
+                            Entry entry = EntryParser.ParseEntry(reader.ReadLine(), out entryMessages);
+
+                            //TODO if entry msgs not null/ws then log
+                            
+                            batch.Entries.Add(entry);
+
+                            ++linesRead;
+                            //if entry says it has an addenda then set expecting entry to false
+                            if (entry.AddendaRecord.Equals("1"))
+                            {
+                                expectingEntryType = false;
+                            }
+                        }
+                        else if (recordType == ACHParser.ADDENDA_RECORD_TYPE_ASCII_VALUE)
+                        {
+                            if (expectingEntryType)
+                            {
+                                //TODO log error that wasn't expecting addenda
+                            }
+
+                            //add addenda to last entry (even if it said wasn't expecticting an addenda)
+                            string addendaMessage = "";
+                            Addenda addenda = AddendaParser.ParseAddenda(reader.ReadLine(), out addendaMessage);
+
+                            //TODO if addendamsgs not null/ws, log
+
+                            if (batch.Entries.Count <= 0)
+                            {
+                                //TODO log no entries to append this addenda
+                            }
+                            else
+                            {
+                                ((Entry)batch.Entries[batch.Entries.Count - 1]).Addenda = addenda;
+                            }
+
+                            ++linesRead;
+
+                            expectingEntryType = true;
+                        }
+                        else
+                        {
+                            //TODO log error that wasn't entry or addenda inside a batch
+                        }
+                        
+                        
+                        /*batch.Entries.Add(reader.ReadLine());
+
+                        ++linesRead;*/
                         //if not 94 chars then error message
                     }
 

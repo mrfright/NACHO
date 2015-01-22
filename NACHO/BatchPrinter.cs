@@ -38,10 +38,9 @@
         {
             string batchStr = PrintHeader(batch);
 
-            //TODO change to type Entry when we have one
-            foreach (string entry in batch.Entries)
+            foreach (Entry entry in batch.Entries)
             {
-                batchStr += "\n" + entry;
+                batchStr += "\n" + EntryPrinter.PrintEntry(entry);
             }
 
             return batchStr + "\n" + PrintControl(batch);
