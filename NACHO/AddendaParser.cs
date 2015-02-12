@@ -2,7 +2,7 @@
 {
     public class AddendaParser
     {
-        public static Addenda ParseAddenda(string addendaStr, out string addendaMessage)
+        public static Addenda ParseAddenda(string addendaStr)
         {
             string recordType = addendaStr.Substring(0, 1);
             string addendaType = addendaStr.Substring(1, 2);
@@ -14,8 +14,7 @@
                 addendaType,
                 paymentInfo,
                 addendaSequence,
-                entrySequence,
-                out addendaMessage);
+                entrySequence);
         }
     }
 }

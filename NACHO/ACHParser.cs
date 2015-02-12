@@ -93,7 +93,7 @@ namespace NACHO
 
                                 //TODO pass in a new line count int, add to total current line number count
                                 uint linesRead = 0;
-                                Batch batch = BatchParser.ParseStream(reader, out batchMessages, out linesRead);
+                                Batch batch = BatchParser.ParseStream(reader, out batchMessages, out linesRead, currentLineNumber);
                                 messages += batchMessages;
 
                                 if (batch != null)

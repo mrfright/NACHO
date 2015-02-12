@@ -9,6 +9,7 @@
         public const uint ENTRY_SEQUENCE_LENGTH     = 7;
 
         public const string RECORD_TYPE = "7";
+        public string[] ADDENDA_TYPES = { "02", "05", "98", "99" };
 
         public string RecordType;
         public string AddendaType;
@@ -20,24 +21,47 @@
             string addendaTypeParam,
             string paymentInfoParam,
             string addendaSequenceParam,
-            string entrySequenceParam,
-            out string addendaMessage)
-        {
-            addendaMessage = LengthCheck.CheckLength("Addenda Record Type", recordTypeParam, RECORD_TYPE_LENGTH);
-            addendaMessage += ExpectedString.CheckString("Addenda Record Type", recordTypeParam, RECORD_TYPE);
-            RecordType = recordTypeParam;
-
-            addendaMessage += LengthCheck.CheckLength("Addenda Type", addendaTypeParam, ADDENDA_TYPE_LENGTH);
-            AddendaType = addendaTypeParam;
-
-            addendaMessage += LengthCheck.CheckLength("Payment Info", paymentInfoParam, PAYMENT_INFO_LENGTH);
-            PaymentInfo = paymentInfoParam;
-
-            addendaMessage += LengthCheck.CheckLength("Addenda Sequence", addendaSequenceParam, ADDENDA_SEQUENCE_LENGTH);
+            string entrySequenceParam)
+        {            
+            RecordType      = recordTypeParam;
+            AddendaType     = addendaTypeParam;
+            PaymentInfo     = paymentInfoParam;
             AddendaSequence = addendaSequenceParam;
+            EntrySequence   = entrySequenceParam;
+        }
 
-            addendaMessage += LengthCheck.CheckLength("Entry Sequence", entrySequenceParam, ENTRY_SEQUENCE_LENGTH);
-            EntrySequence = entrySequenceParam;
+        public string Verify()
+        {
+            string addendaMessage = "";
+
+            addendaMessage = LengthCheck.CheckLength("Addenda Record Type", RecordType, RECORD_TYPE_LENGTH);
+            addendaMessage += ExpectedString.CheckString("Addenda Record Type", RecordType, new string[]{RECORD_TYPE});
+            addendaMessage += LengthCheck.CheckLength("Addenda Type", AddendaType, ADDENDA_TYPE_LENGTH);
+
+            addendaMessage += ExpectedString.CheckString("Addenda Type", AddendaType, ADDENDA_TYPES);
+
+            addendaMessage += LengthCheck.CheckLength("Payment Info", PaymentInfo, PAYMENT_INFO_LENGTH);
+            addendaMessage += LengthCheck.CheckLength("Addenda Sequence", AddendaSequence, ADDENDA_SEQUENCE_LENGTH);
+            addendaMessage += LengthCheck.CheckLength("Entry Sequence", EntrySequence, ENTRY_SEQUENCE_LENGTH);
+
+            addendaMessage += ExpectedString.CheckNumericWithSpaces("Addenda Sequence", AddendaSequence);
+            addendaMessage += ExpectedString.CheckNumericWithSpaces("Entry Detail Sequence", EntrySequence);
+
+            if (!string.IsNullOrEmpty(addendaMessage))
+            {
+                addendaMessage = "Errors in Addenda with " + AddendaPrinter.PrintAddendaVerbose(this) + ": " + addendaMessage;
+            }
+            return addendaMessage;
+        }
+
+        public static Addenda CreateAddenda(string addendaType, string paymentInfo)
+        {
+            return new Addenda("7", addendaType, paymentInfo, "", "");
+        }
+
+        public static Addenda CreatePPDAddenda(string paymentInfo)
+        {
+            return CreateAddenda("05", paymentInfo);
         }
     }
 }

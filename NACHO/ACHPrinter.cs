@@ -38,8 +38,12 @@
 
         public static string PrintACH(ACH ach)
         {
-            string achString = PrintInternal(ach);
-            achString += "\n" + PrintHeader(ach);
+            string achString = "";
+            if (!string.IsNullOrEmpty(ach.InternalString))
+            {
+                achString += PrintInternal(ach) + "\n";
+            }
+            achString += PrintHeader(ach);
             achString += "\n" + PrintBatches(ach);
             achString += "\n"+PrintControl(ach);
             return achString;

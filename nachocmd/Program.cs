@@ -23,6 +23,21 @@ namespace nachodump
                 ACH ach = ACHParser.ParseStream(reader, out messages);
                 System.Console.WriteLine(messages);
                 System.Console.WriteLine("\n"+ACHPrinter.PrintACH(ach));
+
+                Entry entry = new Entry(
+                    "6",
+                    "27",
+                    "07640125",
+                    "0",
+                    "".PadLeft(17),
+                    "".PadLeft(10),
+                    "".PadLeft(15),
+                    "".PadLeft(22),
+                    "  ",
+                    "0",
+                    "".PadLeft(15));
+
+                entry.CheckDigit = Entry.GenerateCheckDigit(entry.ReceivingDFI);
             }
         }
     }

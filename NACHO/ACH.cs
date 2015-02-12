@@ -66,7 +66,7 @@ namespace NACHO
         public string TotalCredit;
         public string Reserved;
 
-        public ArrayList Batches = new ArrayList();
+        public List<Batch> Batches = new List<Batch>();
 
         public string 
         SetHeader(string internalStringParam,
@@ -89,11 +89,11 @@ namespace NACHO
             InternalString = internalStringParam;
 
             messages += LengthCheck.CheckLength("Header Record Type", headerRecordTypeCodeParam, HEADER_RECORD_TYPE_LENGTH);
-            messages += ExpectedString.CheckString("Record Type", headerRecordTypeCodeParam, HEADER_RECORD_TYPE);
+            messages += ExpectedString.CheckString("Record Type", headerRecordTypeCodeParam, new string[]{HEADER_RECORD_TYPE});
             HeaderRecordTypeCode = headerRecordTypeCodeParam;
 
             messages += LengthCheck.CheckLength("Priority Code", priorityCodeParam, PRIORITY_CODE_LENGTH);
-            messages += ExpectedString.CheckString("Priority Code", priorityCodeParam, PRIORITY_CODE_EXPECTED_VALUE);
+            messages += ExpectedString.CheckString("Priority Code", priorityCodeParam, new string[]{PRIORITY_CODE_EXPECTED_VALUE});
             PriorityCode = priorityCodeParam;
 
             messages += LengthCheck.CheckLength("Immediate Destination", immediateDestinationParam, IMMEDIATE_DESTINATION_LENGTH);
@@ -112,15 +112,15 @@ namespace NACHO
             FileIdModifier = fileIdModifierParam;
 
             messages += LengthCheck.CheckLength("Record Size", recordSizeParam, RECORD_SIZE_LENGTH);
-            messages += ExpectedString.CheckString("Record Size", recordSizeParam, RECORD_SIZE_EXPECTED_VALUE);
+            messages += ExpectedString.CheckString("Record Size", recordSizeParam, new string[]{RECORD_SIZE_EXPECTED_VALUE});
             RecordSize = recordSizeParam;
 
             messages += LengthCheck.CheckLength("Blocking Factor", blockingFactorParam, BLOCKING_FACTOR_LENGTH);
-            messages += ExpectedString.CheckString("Blocking Factor", blockingFactorParam, BLOCKING_FACTOR_EXPECTED_VALUE);
+            messages += ExpectedString.CheckString("Blocking Factor", blockingFactorParam, new string[]{BLOCKING_FACTOR_EXPECTED_VALUE});
             BlockingFactor = blockingFactorParam;
 
             messages += LengthCheck.CheckLength("Format Code", formatCodeParam, FORMAT_CODE_LENGTH);
-            messages += ExpectedString.CheckString("Format Code", formatCodeParam, FORMAT_CODE_EXPECTED_VALUE);
+            messages += ExpectedString.CheckString("Format Code", formatCodeParam, new string[]{FORMAT_CODE_EXPECTED_VALUE});
             FormatCode = formatCodeParam;
 
             messages += LengthCheck.CheckLength("Immediate Destination Name", immediateDestinationNameParam, IMMEDIATE_DESTINATION_NAME_LENGTH);
@@ -148,7 +148,7 @@ namespace NACHO
             string messages = "";
 
             messages += LengthCheck.CheckLength("Control Record Type Code", controlRecordTypeCodeParam, CONTROL_RECORD_TYPE_LENGTH);
-            messages += ExpectedString.CheckString("Control Record Type Code", controlRecordTypeCodeParam, CONTROL_RECORD_TYPE);
+            messages += ExpectedString.CheckString("Control Record Type Code", controlRecordTypeCodeParam, new string[]{CONTROL_RECORD_TYPE});
             ControlRecordTypeCode = controlRecordTypeCodeParam;
 
             //pass in null if making new ach, else if reading in existing then pass 

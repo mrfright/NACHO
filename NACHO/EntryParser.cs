@@ -7,7 +7,7 @@ namespace NACHO
 {
     public class EntryParser
     {
-        public static Entry ParseEntry(string entryString, out string entryMessage)
+        public static Entry ParseEntry(string entryString)
         {
             string recordType               = entryString.Substring(0, 1);
             string transactionCode          = entryString.Substring(1, 2);
@@ -31,8 +31,7 @@ namespace NACHO
                 individualName,
                 discretionary,
                 addenda,
-                trace,
-                out entryMessage);
+                trace);
         }
     }
 }

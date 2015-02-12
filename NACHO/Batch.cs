@@ -64,7 +64,7 @@ namespace NACHO
         public string ControlOriginatingDFI;
         public string ControlBatchNumber;
 
-        public ArrayList Entries = new ArrayList();
+        public List<Entry> Entries = new List<Entry>();
 
         public string
         SetHeader(string headerRecordTypeParam,
@@ -84,7 +84,7 @@ namespace NACHO
             string messages = "";
 
             messages += LengthCheck.CheckLength("Header Record Type", headerRecordTypeParam, HEADER_RECORD_TYPE_LENGTH);
-            messages += ExpectedString.CheckString("Header Record Type", headerRecordTypeParam, HEADER_RECORD_TYPE);
+            messages += ExpectedString.CheckString("Header Record Type", headerRecordTypeParam, new string[]{HEADER_RECORD_TYPE});
             HeaderRecordType = headerRecordTypeParam;
 
             messages += LengthCheck.CheckLength("Header Service Class", headerServiceClassParam, HEADER_SERVICE_CLASS_LENGTH);
@@ -142,7 +142,7 @@ namespace NACHO
         {
             string messages = "";
             messages += LengthCheck.CheckLength("Control Record Type", controlRecordTypeParam, CONTROL_RECORD_TYPE_LENGTH);
-            messages += ExpectedString.CheckString("Control Record Type", controlRecordTypeParam, CONTROL_RECORD_TYPE);
+            messages += ExpectedString.CheckString("Control Record Type", controlRecordTypeParam, new string[]{CONTROL_RECORD_TYPE});
             ControlRecordType = controlRecordTypeParam;
 
             messages += LengthCheck.CheckLength("Control Service Class", controlServiceClassParam, CONTROL_SERVICE_CLASS_LENGTH);

@@ -10,5 +10,14 @@
                 + addenda.AddendaSequence
                 + addenda.EntrySequence;
         }
+
+        public static string PrintAddendaVerbose(Addenda addenda)
+        {
+            return  "Record Type='" + addenda.RecordType +
+                    "' Addenda Type='" + addenda.AddendaType +
+                    "' PaymentInfo='" + addenda.PaymentInfo +
+                    "' Addenda Sequence='" + addenda.AddendaSequence +
+                    "' Entry Sequence='" + addenda.EntrySequence + "'";
+        }
     }
 }

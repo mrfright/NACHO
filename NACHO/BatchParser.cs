@@ -66,10 +66,10 @@
                 controlBatchNumber);
 
             return batch;
-        }
+        }       
 
         //todo handle current line in file passing and updating
-        public static Batch ParseStream(System.IO.StreamReader reader, out string messages, out uint linesRead)
+        public static Batch ParseStream(System.IO.StreamReader reader, out string messages, out uint linesRead, uint currentLine)
         {
             linesRead = 0;
             messages = "";
@@ -127,8 +127,7 @@
                             }
 
                             //add entry (even if was expecting addenda)
-                            string entryMessages = "";
-                            Entry entry = EntryParser.ParseEntry(reader.ReadLine(), out entryMessages);
+                            Entry entry = EntryParser.ParseEntry(reader.ReadLine());
 
                             //TODO if entry msgs not null/ws then log
                             
@@ -148,9 +147,7 @@
                                 //TODO log error that wasn't expecting addenda
                             }
 
-                            //add addenda to last entry (even if it said wasn't expecticting an addenda)
-                            string addendaMessage = "";
-                            Addenda addenda = AddendaParser.ParseAddenda(reader.ReadLine(), out addendaMessage);
+                            Addenda addenda = AddendaParser.ParseAddenda(reader.ReadLine());
 
                             //TODO if addendamsgs not null/ws, log
 
@@ -160,7 +157,8 @@
                             }
                             else
                             {
-                                ((Entry)batch.Entries[batch.Entries.Count - 1]).Addenda = addenda;
+                                //TODO do a while addenda, can have many addenda  for each entry
+                                ((Entry)batch.Entries[batch.Entries.Count - 1]).AddendaList.Add(addenda);
                             }
 
                             ++linesRead;
