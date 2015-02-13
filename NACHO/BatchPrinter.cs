@@ -45,5 +45,33 @@
 
             return batchStr + "\n" + PrintControl(batch);
         }
+
+        public static string PrintBatchMembers(Batch batch)
+        {
+            return "HeaderRecordType='" + batch.HeaderRecordType
+                + "' HeaderServiceClass='" + batch.HeaderServiceClass
+                + "' HeaderCompanyName='" + batch.HeaderCompanyName
+                + "' CompanyDiscretionary='" + batch.CompanyDiscretionary
+                + "' HeaderCompanyIdentification='" + batch.HeaderCompanyIdentification
+                + "' StandardEntry='" + batch.StandardEntry
+                + "' CompanyEntry='" + batch.CompanyEntry
+                + "' CompanyDescriptionDate='" + batch.CompanyDescriptionDate
+                + "' EffectiveEntryDate='" + batch.EffectiveEntryDate
+                + "' SettlementDate='" + batch.SettlementDate
+                + "' OriginatorStatus='" + batch.OriginatorStatus
+                + "' HeaderOriginatorDFI='" + batch.HeaderOriginatorDFI
+                + "' HeaderBatchNumber='" + batch.HeaderBatchNumber
+                + "' ControlRecordType='" + batch.ControlRecordType
+                + "' ControlServiceClass='" + batch.ControlServiceClass
+                + "' EntryCount='" + batch.EntryCount
+                + "' EntryHash='" + batch.EntryHash
+                + "' TotalDebit='" + batch.TotalDebit
+                + "' TotalCredit='" + batch.TotalCredit
+                + "' ControlCompanyIdentification='" + batch.ControlCompanyIdentification
+                + "' MessageAuthentication='" + batch.MessageAuthentication
+                + "' Reserved='" + batch.Reserved
+                + "' ControlOriginatorDFI='" + batch.ControlOriginatingDFI
+                + "' ControlBatchNumber='" + batch.ControlBatchNumber + "'";
+        }
     }
 }

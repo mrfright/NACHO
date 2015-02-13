@@ -181,5 +181,7 @@ namespace NACHO
         void SetAutoValues()
         {
         }
+
+        //TODO check batch company id same as immediate origin? (see 
     }
 }

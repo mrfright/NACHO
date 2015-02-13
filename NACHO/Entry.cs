@@ -16,6 +16,8 @@ namespace NACHO
         public const uint TRACE_NUMBER_LENGTH               = 15;
 
         public const string RECORD_TYPE = "6";
+
+        //TODO somehow combine this and the enum
         public string[] TRANSACTION_CODE_TYPES = {"22",
                                                   "23",
                                                   "24",
@@ -28,6 +30,15 @@ namespace NACHO
                                                   "37",
                                                   "38",
                                                   "39"};
+        //TODO maybe have new const for each of these instead of the enum, like DEBIT_FOR_CHECKING=TRANSACTION_CODE_TYPES[3], 
+        //TODO actually, do it the other way DEBIT_FOR_CHECKING="27", TRANS={..., DEBIT_FOR_CHECKING, ...}
+
+        //TODO use transaction codes enum instead of hard values, or do above TODO
+        public enum TransactionCodes
+        {
+            DebitDestinedForCheckingAccount = 27,
+            DebitDestinedForSavingsAccount = 37
+        }
 
         public string RecordType;
         public string TransactionCode;
@@ -125,8 +136,12 @@ namespace NACHO
             int expectedAddendaSequence = 1;
             foreach (Addenda addenda in AddendaList)
             {
-                //check addenda, append if any errors
-                entryMessage += "\n" + addenda.Verify();
+                string addendaVerify = addenda.Verify();
+                if (!string.IsNullOrEmpty(addendaVerify))
+                {
+                    entryMessage += "\n" + addendaVerify;
+                }
+
                 int addendaSequence = -1;
                 if (int.TryParse(addenda.AddendaSequence, out addendaSequence))
                 {
@@ -153,20 +168,67 @@ namespace NACHO
             return entryMessage;
         }
 
-        void AddNewAddenda(string addendaType, string paymentInfo)
+        public void AddNewAddenda(string addendaType, string paymentInfo)
         {
             AddAddendaToList(Addenda.CreateAddenda(addendaType, paymentInfo));
         }
 
-        void AddAddendaToList(Addenda addenda)
+        public void AddAddendaToList(Addenda addenda)
         {
-            //TODO add to list, update its sequence and entry trace number
-
+            AddendaList.Add(addenda);
+            AutoGenValues();
         }
 
-        void AddNewPPDAddenda(string paymentInfo)
+        public void AddNewPPDAddenda(string paymentInfo)
         {
             AddAddendaToList(Addenda.CreatePPDAddenda(paymentInfo));
         }
+
+        public void AutoGenValues()
+        {
+            if (AddendaList != null && AddendaList.Count > 0)
+            {
+                AddendaRecord = "1";
+            }
+            else
+            {
+                AddendaRecord = "0";
+            }
+
+            int addendaSequence = 1;
+            foreach (Addenda addenda in AddendaList)
+            {
+                addenda.AddendaSequence = addendaSequence++.ToString().PadLeft(4, '0');
+                addenda.EntrySequence = TraceNumber.Substring(8, 7);
+            }
+
+            CheckDigit = Entry.GenerateCheckDigit(ReceivingDFI);
+        }
+
+        public static Entry CreateEntry(
+            string transactionCode, 
+            string receivingDFI, 
+            string dfiAccount, 
+            string amount, 
+            string individualID, 
+            string individualName,
+            string discretionaryData)
+        {
+            Entry entry = new Entry(
+                "6",
+                transactionCode,
+                receivingDFI,
+                "",
+                dfiAccount,
+                amount,
+                individualID,
+                individualName,
+                discretionaryData,
+                "",
+                "");
+
+            entry.AutoGenValues();
+            return entry;
+        }        
     }
 }

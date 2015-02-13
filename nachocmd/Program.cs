@@ -10,6 +10,8 @@ namespace nachodump
     {
         static void Main(string[] args)
         {
+            //TODO test that create with auto gen of everything also passes all verifies
+
             //this is what knows about files (as should any user of the NACHO library)
             if (args.Length <= 0)
             {
