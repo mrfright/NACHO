@@ -2,10 +2,8 @@
 {
     public class BatchParser
     {
-        public static Batch ParseHeader(string batchHeader, Batch batch, out string headerMessage)
+        public static Batch ParseHeader(string batchHeader, Batch batch)
         {
-            headerMessage = "";
-
             string headerRecord = batchHeader.Substring(0, 1);
             string headerService = batchHeader.Substring(1, 3); 
             string headerCompanyName = batchHeader.Substring(4, 16);
@@ -20,7 +18,7 @@
             string headerOriginatorDFI = batchHeader.Substring(79, 8); 
             string headerBatchNumber = batchHeader.Substring(87, 7); 
 
-            headerMessage += batch.SetHeader(headerRecord,
+            batch.SetHeader(headerRecord,
                 headerService,
                 headerCompanyName,
                 companyDiscretionary,
@@ -37,10 +35,8 @@
             return batch;
         }
 
-        public static Batch ParseControl(string batchControl, Batch batch, out string controlMessage)
+        public static Batch ParseControl(string batchControl, Batch batch)
         {
-            controlMessage = "";
-
             string controlRecordType            = batchControl.Substring(0, 1);
             string controlServiceClass          = batchControl.Substring(1, 3);
             string entryCount                   = batchControl.Substring(4, 6);
@@ -53,7 +49,7 @@
             string controlOriginatorDFI         = batchControl.Substring(79, 8);
             string controlBatchNumber           = batchControl.Substring(87, 7);
 
-            controlMessage += batch.SetControl(controlRecordType,
+            batch.SetControl(controlRecordType,
                 controlServiceClass,
                 entryCount,
                 entryHash,
@@ -99,8 +95,7 @@
                     string batchHeader = reader.ReadLine();
                     if (batchHeader != null)
                     {
-                        string batchHeaderMessage;
-                        ParseHeader(batchHeader, batch, out batchHeaderMessage);
+                        ParseHeader(batchHeader, batch);                        
                         ++linesRead;
 
                         //TODO if batchheadermsg not null/ws then add to messages
@@ -200,10 +195,11 @@
                         //TODO if not 94 chars then error
                         if(batchControl != null)
                         {
-                            string batchControlMessages;
-                            ParseControl(batchControl, batch, out batchControlMessages);
+                            string batchMessages;
+                            ParseControl(batchControl, batch);
 
                             //TODO if batchcontrolmsg not null/ws then add to msgs
+                            batchMessages = batch.Verify();
 
                             ++linesRead;
                         }

@@ -72,8 +72,7 @@ namespace NACHO
                             string achHeader = reader.ReadLine();
                             if (achHeader != null)//shouldn't be null if recordType was successful, but just in case
                             {
-                                string setHeaderMessage;
-                                ParseHeader(achHeader, ach, internalString, out setHeaderMessage);
+                                ParseHeader(achHeader, ach, internalString);
 
                                 //TODO handle if there there's a message from setheader
                                 //if setheadermessage not null or ws then say so and add to messages
@@ -116,9 +115,8 @@ namespace NACHO
                                 string achControl = reader.ReadLine();
                                 if (achControl != null)
                                 {
-                                    string controlMessage;
 
-                                    ParseControl(achControl, ach, out controlMessage);
+                                    ParseControl(achControl, ach);
                                     recievedAchControlEntry = true;
                                     //TODO if controlmessage is not null/ws then add error to message
 
@@ -155,7 +153,7 @@ namespace NACHO
         }
 
         //parse ach header line
-        public static ACH ParseHeader(string achHeader, ACH ach, string internalString, out string setHeaderMessage)
+        public static ACH ParseHeader(string achHeader, ACH ach, string internalString)
         {
             //if achHeader null or not 94 chars, error message
             string headerRecordTypeCode = achHeader.Substring(0, 1);
@@ -172,7 +170,7 @@ namespace NACHO
             string immediateOriginName = achHeader.Substring(63, 23);
             string referenceCode = achHeader.Substring(86, 8);
 
-            setHeaderMessage = ach.SetHeader(internalString,
+            ach.SetHeader(internalString,
                                       headerRecordTypeCode,
                                       priorityCode,
                                       immediateDestination,
@@ -190,7 +188,7 @@ namespace NACHO
         }
 
         //parse ach footer line
-        public static ACH ParseControl(string achControl, ACH ach, out string controlMessage)
+        public static ACH ParseControl(string achControl, ACH ach)
         {
             //TODO if achControl null or not 94 chars then error message
             string controlRecordType = achControl.Substring(0, 1);
@@ -202,8 +200,7 @@ namespace NACHO
             string controlTotalCredit = achControl.Substring(43, 12);
             string controlReserved = achControl.Substring(55, 39);
 
-            controlMessage="";
-            controlMessage += ach.SetControl(controlRecordType,
+            ach.SetControl(controlRecordType,
                                        controlBatchCount,
                                        controlBlockCount,
                                        controlEntryAddendaCount,

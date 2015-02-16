@@ -23,6 +23,7 @@ namespace nachodump
                 System.IO.StreamReader reader = new System.IO.StreamReader(args[0]);
                 string messages;
                 ACH ach = ACHParser.ParseStream(reader, out messages);
+                //TODO verify ach
                 System.Console.WriteLine(messages);
                 System.Console.WriteLine("\n"+ACHPrinter.PrintACH(ach));
 

@@ -68,7 +68,7 @@ namespace NACHO
 
         public List<Batch> Batches = new List<Batch>();
 
-        public string 
+        public void 
         SetHeader(string internalStringParam,
             string headerRecordTypeCodeParam,
             string priorityCodeParam,
@@ -82,106 +82,279 @@ namespace NACHO
             string formatCodeParam,
             string immediateDestinationNameParam,
             string immediateOriginNameParam,
-            string referenceCodeParam)//set just header values
+            string referenceCodeParam)
         {
-            string messages = "";
-
-            InternalString = internalStringParam;
-
-            messages += LengthCheck.CheckLength("Header Record Type", headerRecordTypeCodeParam, HEADER_RECORD_TYPE_LENGTH);
-            messages += ExpectedString.CheckString("Record Type", headerRecordTypeCodeParam, new string[]{HEADER_RECORD_TYPE});
-            HeaderRecordTypeCode = headerRecordTypeCodeParam;
-
-            messages += LengthCheck.CheckLength("Priority Code", priorityCodeParam, PRIORITY_CODE_LENGTH);
-            messages += ExpectedString.CheckString("Priority Code", priorityCodeParam, new string[]{PRIORITY_CODE_EXPECTED_VALUE});
-            PriorityCode = priorityCodeParam;
-
-            messages += LengthCheck.CheckLength("Immediate Destination", immediateDestinationParam, IMMEDIATE_DESTINATION_LENGTH);
-            ImmediateDestination = immediateDestinationParam;
-
-            messages += LengthCheck.CheckLength("Immediate Origin", immediateOriginParam, IMMEDIATE_ORIGIN_LENGTH);
-            ImmediateOrigin = immediateOriginParam;
-
-            messages += LengthCheck.CheckLength("File Creation Date", fileCreationDateParam, FILE_CREATION_DATE_LENGTH);
-            FileCreationDate = fileCreationDateParam;
-
-            messages += LengthCheck.CheckLength("File Creation Time", fileCreationTimeParam, FILE_CREATION_TIME_LENGTH);
-            FileCreationTime = fileCreationTimeParam;
-
-            messages += LengthCheck.CheckLength("File ID Modifier", fileIdModifierParam, FILE_ID_MODIFIER_LENGTH);
-            FileIdModifier = fileIdModifierParam;
-
-            messages += LengthCheck.CheckLength("Record Size", recordSizeParam, RECORD_SIZE_LENGTH);
-            messages += ExpectedString.CheckString("Record Size", recordSizeParam, new string[]{RECORD_SIZE_EXPECTED_VALUE});
-            RecordSize = recordSizeParam;
-
-            messages += LengthCheck.CheckLength("Blocking Factor", blockingFactorParam, BLOCKING_FACTOR_LENGTH);
-            messages += ExpectedString.CheckString("Blocking Factor", blockingFactorParam, new string[]{BLOCKING_FACTOR_EXPECTED_VALUE});
-            BlockingFactor = blockingFactorParam;
-
-            messages += LengthCheck.CheckLength("Format Code", formatCodeParam, FORMAT_CODE_LENGTH);
-            messages += ExpectedString.CheckString("Format Code", formatCodeParam, new string[]{FORMAT_CODE_EXPECTED_VALUE});
-            FormatCode = formatCodeParam;
-
-            messages += LengthCheck.CheckLength("Immediate Destination Name", immediateDestinationNameParam, IMMEDIATE_DESTINATION_NAME_LENGTH);
-            ImmediateDestinationName = immediateDestinationNameParam;
-
-            messages += LengthCheck.CheckLength("Immediate Origin Name", immediateOriginNameParam, IMMEDIATE_ORIGIN_NAME_LENGTH);
-            ImmediateOriginName = immediateOriginNameParam;
-
-            messages += LengthCheck.CheckLength("Reference Code", referenceCodeParam, REFERENCE_CODE_LENGTH);
+            InternalString = internalStringParam;            
+            HeaderRecordTypeCode = headerRecordTypeCodeParam;            
+            PriorityCode = priorityCodeParam;            
+            ImmediateDestination = immediateDestinationParam;            
+            ImmediateOrigin = immediateOriginParam;            
+            FileCreationDate = fileCreationDateParam;            
+            FileCreationTime = fileCreationTimeParam;            
+            FileIdModifier = fileIdModifierParam;            
+            RecordSize = recordSizeParam;            
+            BlockingFactor = blockingFactorParam;            
+            FormatCode = formatCodeParam;            
+            ImmediateDestinationName = immediateDestinationNameParam;            
+            ImmediateOriginName = immediateOriginNameParam;            
             ReferenceCode = referenceCodeParam;
-
-            return messages;
         }
 
-        public string 
+        public void 
         SetControl(string controlRecordTypeCodeParam,
-                   string batchCountParam, //if calculated entries like this are null, then making a new ach
+                   string batchCountParam,
                    string blockCountParam,
                    string entryAddendaCountParam,
                    string entryHashParam,
                    string totalDebitParam,
                    string totalCreditParam,
-                   string reservedParam)//set just control values
+                   string reservedParam)
+        {
+            ControlRecordTypeCode = controlRecordTypeCodeParam;
+            BatchCount = batchCountParam;            
+            BlockCount = blockCountParam;            
+            EntryAddendaCount = entryAddendaCountParam;            
+            EntryHash = entryHashParam;            
+            TotalDebit = totalDebitParam;            
+            TotalCredit = totalCreditParam;            
+            Reserved = reservedParam;
+        }
+
+        //TODO auto gen, set values that depend on batch entry values
+        void SetAutoValues()
+        {
+            int batchNumber = 1;
+            foreach (Batch batch in Batches)
+            {
+                batch.HeaderCompanyIdentification = ImmediateOrigin;
+                batch.HeaderOriginatorDFI = ImmediateDestination.Substring(1, 8);
+                batch.EffectiveEntryDate = FileCreationDate;
+                batch.HeaderCompanyName = ImmediateOriginName;
+
+                batch.AutoGenValues(batchNumber++);
+            }
+
+            BatchCount = Batches.Count.ToString().PadLeft(6, '0');
+            BlockCount = GenerateBlockCount().ToString().PadLeft(6, '0');
+            EntryAddendaCount = GenerateEntryAddendaCount().ToString().PadLeft(8, '0');
+            EntryHash = GenerateEntryHash();
+            TotalDebit = GenerateTotalDebit().ToString().PadLeft(12, '0');
+            TotalCredit = GenerateTotalCredit().ToString().PadLeft(12, '0');
+        }
+
+        //TODO verif
+        public string Verify()
         {
             string messages = "";
 
-            messages += LengthCheck.CheckLength("Control Record Type Code", controlRecordTypeCodeParam, CONTROL_RECORD_TYPE_LENGTH);
-            messages += ExpectedString.CheckString("Control Record Type Code", controlRecordTypeCodeParam, new string[]{CONTROL_RECORD_TYPE});
-            ControlRecordTypeCode = controlRecordTypeCodeParam;
+            messages += LengthCheck.CheckLength("Header Record Type", HeaderRecordTypeCode, HEADER_RECORD_TYPE_LENGTH);
+            messages += ExpectedString.CheckString("Record Type", HeaderRecordTypeCode, new string[] { HEADER_RECORD_TYPE });
+            messages += LengthCheck.CheckLength("Priority Code", PriorityCode, PRIORITY_CODE_LENGTH);
+            messages += ExpectedString.CheckString("Priority Code", PriorityCode, new string[] { PRIORITY_CODE_EXPECTED_VALUE });
+            messages += LengthCheck.CheckLength("Immediate Destination", ImmediateDestination, IMMEDIATE_DESTINATION_LENGTH);
+            messages += LengthCheck.CheckLength("Immediate Origin", ImmediateOrigin, IMMEDIATE_ORIGIN_LENGTH);
+            messages += LengthCheck.CheckLength("File Creation Date", FileCreationDate, FILE_CREATION_DATE_LENGTH);
+            messages += LengthCheck.CheckLength("File Creation Time", FileCreationTime, FILE_CREATION_TIME_LENGTH);
+            messages += LengthCheck.CheckLength("File ID Modifier", FileIdModifier, FILE_ID_MODIFIER_LENGTH);
+            messages += LengthCheck.CheckLength("Record Size", RecordSize, RECORD_SIZE_LENGTH);
+            messages += ExpectedString.CheckString("Record Size", RecordSize, new string[] { RECORD_SIZE_EXPECTED_VALUE });
+            messages += LengthCheck.CheckLength("Control Record Type Code", ControlRecordTypeCode, CONTROL_RECORD_TYPE_LENGTH);
+            messages += ExpectedString.CheckString("Control Record Type Code", ControlRecordTypeCode, new string[] { CONTROL_RECORD_TYPE });
+            messages += LengthCheck.CheckLength("Blocking Factor", BlockingFactor, BLOCKING_FACTOR_LENGTH);
+            messages += ExpectedString.CheckString("Blocking Factor", BlockingFactor, new string[] { BLOCKING_FACTOR_EXPECTED_VALUE });
+            messages += LengthCheck.CheckLength("Format Code", FormatCode, FORMAT_CODE_LENGTH);
+            messages += ExpectedString.CheckString("Format Code", FormatCode, new string[] { FORMAT_CODE_EXPECTED_VALUE });
+            messages += LengthCheck.CheckLength("Immediate Destination Name", ImmediateDestinationName, IMMEDIATE_DESTINATION_NAME_LENGTH);
+            messages += LengthCheck.CheckLength("Immediate Origin Name", ImmediateOriginName, IMMEDIATE_ORIGIN_NAME_LENGTH);
+            messages += LengthCheck.CheckLength("Reference Code", ReferenceCode, REFERENCE_CODE_LENGTH);
+            messages += LengthCheck.CheckLength("Batch Count", BatchCount, BATCH_COUNT_LEGTH);
+            messages += LengthCheck.CheckLength("Block Count", BlockCount, BLOCK_COUNT_LENGTH);
+            messages += LengthCheck.CheckLength("Entry Addenda Count", EntryAddendaCount, ENTRY_ADDENDA_COUNT_LENGTH);
+            messages += LengthCheck.CheckLength("Entry Hash", EntryHash, ENTRY_HASH_LENGTH);
+            messages += LengthCheck.CheckLength("Total Debit", TotalDebit, TOTAL_DEBIT_LENGTH);
+            messages += LengthCheck.CheckLength("Total Credit", TotalCredit, TOTAL_CREDIT_LENGTH);
+            messages += LengthCheck.CheckLength("Reserved", Reserved, RESERVED_LENGTH);
 
-            //pass in null if making new ach, else if reading in existing then pass 
-            //in and this will do integrity checks
-            messages += LengthCheck.CheckLength("Batch Count", batchCountParam, BATCH_COUNT_LEGTH);
-            BatchCount = batchCountParam;
+            //TODO verify batches            
 
-            messages += LengthCheck.CheckLength("Block Count", blockCountParam, BLOCK_COUNT_LENGTH);
-            BlockCount = blockCountParam;
+            //TODO verify autogen values/values in both header and control are correct
+            foreach (Batch batch in Batches)
+            {
+                string batchMessage = batch.Verify();
 
-            messages += LengthCheck.CheckLength("Entry Addenda Count", entryAddendaCountParam, ENTRY_ADDENDA_COUNT_LENGTH);
-            EntryAddendaCount = entryAddendaCountParam;
+                if (!ImmediateOrigin.Equals(batch.HeaderCompanyIdentification))
+                {
+                    batchMessage += "\nBatch Company ID '" + batch.HeaderCompanyIdentification +
+                        "' doesn't match ACH Immediate Origin '" + ImmediateOrigin + "'";
+                }
 
-            messages += LengthCheck.CheckLength("Entry Hash", entryHashParam, ENTRY_HASH_LENGTH);
-            EntryHash = entryHashParam;
+                if (!ImmediateDestination.Substring(1, 8).Equals(batch.HeaderOriginatorDFI))
+                {
+                    batchMessage += "\nBatch Originator DFI '" + batch.HeaderOriginatorDFI +
+                        "' doesn't match ACH Immediate Destination '" + ImmediateDestination + "'";
+                }
 
-            messages += LengthCheck.CheckLength("Total Debit", totalDebitParam, TOTAL_DEBIT_LENGTH);
-            TotalDebit = totalDebitParam;
+                if (!string.IsNullOrEmpty(batchMessage))
+                {
+                    messages += "\nErrors in Batch: " + BatchPrinter.PrintBatchMembers(batch) + ": " + batchMessage;
+                }
+            }
 
-            messages += LengthCheck.CheckLength("Total Credit", totalCreditParam, TOTAL_CREDIT_LENGTH);
-            TotalCredit = totalCreditParam;
+            int batchCountNum = -1;
+            if (int.TryParse(BatchCount, out batchCountNum))
+            {
+                if (batchCountNum != Batches.Count)
+                {
+                    messages += "\nACH value for Batch Count of " + batchCountNum.ToString() +
+                        " does not match the actual number of batches of " + Batches.Count.ToString();
+                }
+            }
+            else
+            {
+                messages += "\nACH Batch Count could not be parsed as an integer";
+            }
 
-            messages += LengthCheck.CheckLength("Reserved", reservedParam, RESERVED_LENGTH);
-            Reserved = reservedParam;
+            int blockCountNum = 0;
+            if (int.TryParse(BlockCount, out blockCountNum))
+            {
+                int expectedBlockCount = GenerateBlockCount();
+                if (blockCountNum != expectedBlockCount)
+                {
+                    messages += "\nACH block count of " + blockCountNum.ToString() +
+                        " did not match expected block count of " + expectedBlockCount.ToString();
+                }
+            }
+            else
+            {
+                messages += "\nACH block count could not be parsed as an integer";
+            }
+
+            int entryCountNum = 0;
+            if (int.TryParse(EntryAddendaCount, out entryCountNum))
+            {
+                int expectedEntryCount = GenerateEntryAddendaCount();
+                if (entryCountNum != expectedEntryCount)
+                {
+                    messages += "\nACH entry and addenda count of " + entryCountNum.ToString() +
+                        " did not match expected count of " + expectedEntryCount.ToString();
+                }
+            }
+            else
+            {
+                messages += "\nACH entry and addenda count could not be parsed as an integer";
+            }
+
+            string expectedEntryHash = GenerateEntryHash();
+            if (!EntryHash.Equals(expectedEntryHash))
+            {
+                messages += "\nACH entry hash of '" + EntryHash + "' does not match expected value of '" + expectedEntryHash + "'";
+            }
+
+            int totalDebitNum = 0;
+            if (int.TryParse(TotalDebit, out totalDebitNum))
+            {
+                int expectedTotalDebit = GenerateTotalDebit();
+                if (totalDebitNum != expectedTotalDebit)
+                {
+                    messages += "\nACH total debit was " + totalDebitNum.ToString() +
+                        " when the expected value was " + expectedTotalDebit.ToString();
+                }
+            }
+            else
+            {
+                messages += "\nACH total debit could not be parsed as an integer";
+            }
+
+            int totalCreditNum = 0;
+            if (int.TryParse(TotalCredit, out totalCreditNum))
+            {
+                int expectedTotalCredit = GenerateTotalCredit();
+                if (totalCreditNum != expectedTotalCredit)
+                {
+                    messages += "\nACH total credit was " + totalCreditNum.ToString() +
+                        " when the expected value was " + expectedTotalCredit.ToString();
+                }
+            }
+            else
+            {
+                messages += "\nACH total credit could not be parsed as an integer";
+            }
 
             return messages;
         }
 
-        //set values that depend on batch entry values
-        void SetAutoValues()
+        /// <summary>
+        /// Blocks are groups of 10 lines, which includes any header or control lines in the file.
+        /// The count is how many blocks are needed to hold that many lines.  
+        /// For example, 10 lines is one block. For 13 lines, two blocks are needed.
+        /// </summary>
+        /// <returns>Block count</returns>
+        public int GenerateBlockCount()
         {
+            int count = 2;//ACH file header and control
+
+            foreach (Batch batch in Batches)
+            {
+                count += batch.EntryAddendaCount() + 2;//+2 for batch header and control
+            }
+
+            int blockCount = count / 10;//'Blocking Factor' from ACH header, but always 10 any way
+            if (count % 10 > 0)
+            {
+                blockCount++;
+            }
+
+            return count;
         }
 
-        //TODO check batch company id same as immediate origin? (see 
+        public int GenerateEntryAddendaCount()
+        {
+            int count = 0;
+
+            foreach (Batch batch in Batches)
+            {
+                count += batch.EntryAddendaCount();
+            }
+
+            return count;
+        }
+
+        public string GenerateEntryHash()
+        {
+            long hashAccum = 0;
+            foreach (Batch batch in Batches)
+            {
+                hashAccum += batch.GenerateHashNumber();
+            }
+
+            return (hashAccum % 10000000000).ToString().PadLeft(10, '0');
+        }
+
+        public int GenerateTotalDebit()
+        {
+            int totalDebit = 0;
+            foreach (Batch batch in Batches)
+            {
+                totalDebit += batch.GenerateTotalDebitNumber();
+            }
+
+            return totalDebit;
+        }
+
+        public int GenerateTotalCredit()
+        {
+            int totalCredit = 0;
+            foreach (Batch batch in Batches)
+            {
+                totalCredit += batch.GenerateTotalCreditNumber();
+            }
+
+            return totalCredit;
+        }
+
+        //TODO create ach with min needed values, autogen
+
+        //TODO add batch (calls auto set values)
+
     }
 }

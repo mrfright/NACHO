@@ -45,6 +45,7 @@ namespace NACHO
                                                "220",
                                                "225"};
         //TODO maybe have new const for each of these, like MIXED_DEBIT_CREDIT = SERVICE_CLASS_CODES[0]
+        //TODO do other way, MIXED_DEBIT_CREDIT = "200", SERVICE_CLASS_CODES = {MIXED_DEBIT_CREDIT...
 
         public string[] STANDARD_ENTRY_CODES = {"PPD",
                                                 "CCD",
@@ -274,6 +275,12 @@ namespace NACHO
         }
 
         public string GenerateHash()
+        {            
+            long batchHash = GenerateHashNumber() % 10000000000;
+            return batchHash.ToString().PadLeft(10, '0');
+        }
+
+        public long GenerateHashNumber()
         {
             long batchHashSum = 0;
             foreach (Entry entry in Entries)
@@ -284,12 +291,17 @@ namespace NACHO
                     batchHashSum += trySum;
                 }
             }
-            long batchHash = batchHashSum % 10000000000;
-            return batchHash.ToString().PadLeft(10, '0');
+
+            return batchHashSum;
         }
 
 
         public string GenerateTotalDebit()
+        {
+            return GenerateTotalDebitNumber().ToString().PadLeft(12, '0');
+        }
+
+        public int GenerateTotalDebitNumber()
         {
             int totalDebit = 0;
             foreach (Entry entry in Entries)
@@ -304,11 +316,16 @@ namespace NACHO
                 }
             }
 
-            return totalDebit.ToString().PadLeft(12, '0');
+            return totalDebit;
         }
 
         public string GenerateTotalCredit()
-        {            
+        {
+            return GenerateTotalCreditNumber().ToString().PadLeft(12, '0');
+        }
+
+        public int GenerateTotalCreditNumber()
+        {
             int totalCredit = 0;
             foreach (Entry entry in Entries)
             {
@@ -323,7 +340,7 @@ namespace NACHO
                 }
             }
 
-            return totalCredit.ToString().PadLeft(12, '0');
+            return totalCredit;
         }
 
         public static Batch CreateBatch(
@@ -395,6 +412,12 @@ namespace NACHO
             ControlCompanyIdentification = HeaderCompanyIdentification;
             ControlOriginatingDFI = HeaderOriginatorDFI;
             ControlBatchNumber = HeaderBatchNumber;
+        }
+
+        public void AutoGenValues(int batchNumber)
+        {
+            HeaderBatchNumber = batchNumber.ToString().PadLeft(7, '0');
+            AutoGenValues();
         }
 
         void AddEntry(Entry entry)
