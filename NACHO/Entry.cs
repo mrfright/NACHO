@@ -3,42 +3,34 @@ namespace NACHO
 {
     public class Entry
     {
-        public const uint RECORD_TYPE_LENGTH                = 1;
-        public const uint TRANSACTION_CODE_LENGTH           = 2;
-        public const uint RECEIVING_DFI_LENGTH              = 8;
-        public const uint CHECK_DIGIT_LENGTH                = 1;
-        public const uint DFI_ACCOUNT_LENGTH                = 17;
-        public const uint AMOUNT_LENGTH                     = 10;
-        public const uint INDIVIDUAL_IDENTIFICATION_LENGTH  = 15;
-        public const uint INDIVIDUAL_NAME_LENGTH            = 22;
-        public const uint DISCRETIONARY_DATA_LENGTH         = 2;
-        public const uint ADDENDA_RECORD_LENGTH             = 1;
-        public const uint TRACE_NUMBER_LENGTH               = 15;
+        public const int RECORD_TYPE_LENGTH                = 1;
+        public const int TRANSACTION_CODE_LENGTH           = 2;
+        public const int RECEIVING_DFI_LENGTH              = 8;
+        public const int CHECK_DIGIT_LENGTH                = 1;
+        public const int DFI_ACCOUNT_LENGTH                = 17;
+        public const int AMOUNT_LENGTH                     = 10;
+        public const int INDIVIDUAL_IDENTIFICATION_LENGTH  = 15;
+        public const int INDIVIDUAL_NAME_LENGTH            = 22;
+        public const int DISCRETIONARY_DATA_LENGTH         = 2;
+        public const int ADDENDA_RECORD_LENGTH             = 1;
+        public const int TRACE_NUMBER_LENGTH               = 15;
 
         public const string RECORD_TYPE = "6";
 
-        //TODO somehow combine this and the enum
+        public const string DEBIT_FOR_CHECKING = "27";
+        public const string DEBIT_FOR_SAVINGS = "37";
         public string[] TRANSACTION_CODE_TYPES = {"22",
                                                   "23",
                                                   "24",
-                                                  "27",
+                                                  DEBIT_FOR_CHECKING,
                                                   "28",
                                                   "29",
                                                   "32",
                                                   "33",
                                                   "34",
-                                                  "37",
+                                                  DEBIT_FOR_SAVINGS,
                                                   "38",
                                                   "39"};
-        //TODO maybe have new const for each of these instead of the enum, like DEBIT_FOR_CHECKING=TRANSACTION_CODE_TYPES[3], 
-        //TODO actually, do it the other way DEBIT_FOR_CHECKING="27", TRANS={..., DEBIT_FOR_CHECKING, ...}
-
-        //TODO use transaction codes enum instead of hard values, or do above TODO
-        public enum TransactionCodes
-        {
-            DebitDestinedForCheckingAccount = 27,
-            DebitDestinedForSavingsAccount = 37
-        }
 
         public string RecordType;
         public string TransactionCode;
@@ -52,7 +44,7 @@ namespace NACHO
         public string AddendaRecord;
         public string TraceNumber;
 
-        public List<Addenda> AddendaList;
+        public List<Addenda> AddendaList = new List<Addenda>();
 
         public Entry(string recordTypeParam,
             string transactionCodeParam,
@@ -84,7 +76,7 @@ namespace NACHO
             int[] weights = {3, 7, 1};
             int weightIndex = 0;
             int sum = 0;
-            foreach (char dfiChar in RDFI.ToCharArray())
+            foreach (char dfiChar in RDFI.Trim().ToCharArray())
             {
                 sum += int.Parse(dfiChar.ToString()) * weights[weightIndex];
                 weightIndex = (weightIndex + 1) % 3;
@@ -107,11 +99,12 @@ namespace NACHO
             entryMessage += ExpectedString.CheckNumericNoSpaces("Receiving DFI", ReceivingDFI);
             entryMessage += LengthCheck.CheckLength("Check Digit", CheckDigit, CHECK_DIGIT_LENGTH);
 
+            /*
             string expectedCheckDigit = GenerateCheckDigit(ReceivingDFI);
             if (!CheckDigit.Equals(expectedCheckDigit))
             {
                 entryMessage += "\nCheck Digit is '" + CheckDigit + "' when '" + expectedCheckDigit + "' was expected";
-            }
+            }*/
 
             entryMessage += LengthCheck.CheckLength("DFI Account", DFIAccount, DFI_ACCOUNT_LENGTH);
             entryMessage += ExpectedString.CheckAlphaNumericWithSpaces("DFI Account", DFIAccount);            
@@ -124,37 +117,46 @@ namespace NACHO
 
             entryMessage += ExpectedString.CheckString("Addenda Record", AddendaRecord, new string[] { "0", "1" });
 
+            if (EntryPrinter.PrintEntry(this).Length != 94)
+            {
+                entryMessage += "\nEntry does not contain 94 characters: '" + EntryPrinter.PrintEntry(this) + "'";
+            }
+
             if (AddendaRecord.Equals("0") && AddendaList != null && AddendaList.Count > 0)
             {
-                entryMessage += "Addenda Record is '0' when there are addenda records when none were expected";
+                entryMessage += "\nAddenda Record is '0' when there are addenda records when none were expected";
             }
             else if (AddendaRecord.Equals("1") && (AddendaList == null || AddendaList.Count <= 0))
             {
-                entryMessage += "Addenda Record is '1' when there are no addedna records when at least one was expected";
+                entryMessage += "\nAddenda Record is '1' when there are no addedna records when at least one was expected";
             }
 
             int expectedAddendaSequence = 1;
-            foreach (Addenda addenda in AddendaList)
+
+            if (AddendaList != null)
             {
-                string addendaVerify = addenda.Verify();
-                if (!string.IsNullOrEmpty(addendaVerify))
+                foreach (Addenda addenda in AddendaList)
                 {
-                    entryMessage += "\n" + addendaVerify;
-                }
-
-                int addendaSequence = -1;
-                if (int.TryParse(addenda.AddendaSequence, out addendaSequence))
-                {
-                    if (expectedAddendaSequence != int.Parse(addenda.AddendaSequence))
+                    string addendaVerify = addenda.Verify();
+                    if (!string.IsNullOrEmpty(addendaVerify))
                     {
-                        entryMessage += "Addenda has incorrect addenda sequence when " + expectedAddendaSequence.ToString()
-                            + " was expected: " + AddendaPrinter.PrintAddendaVerbose(addenda);
+                        entryMessage += "\n" + addendaVerify;
                     }
-                }
 
-                if (!TraceNumber.Substring(8, 7).Equals(addenda.EntrySequence))
-                {
-                    entryMessage += "Addenda did not have expected entry sequence: " + AddendaPrinter.PrintAddendaVerbose(addenda);
+                    int addendaSequence = -1;
+                    if (int.TryParse(addenda.AddendaSequence, out addendaSequence))
+                    {
+                        if (expectedAddendaSequence != int.Parse(addenda.AddendaSequence))
+                        {
+                            entryMessage += "\nAddenda has incorrect addenda sequence when " + expectedAddendaSequence.ToString()
+                                + " was expected: " + AddendaPrinter.PrintAddendaVerbose(addenda);
+                        }
+                    }
+
+                    if (!TraceNumber.Substring(8, 7).Equals(addenda.EntrySequence))
+                    {
+                        entryMessage += "\nAddenda did not have expected entry sequence: " + AddendaPrinter.PrintAddendaVerbose(addenda);
+                    }
                 }
             }
 
@@ -196,13 +198,22 @@ namespace NACHO
             }
 
             int addendaSequence = 1;
-            foreach (Addenda addenda in AddendaList)
+            if (AddendaList != null)
             {
-                addenda.AddendaSequence = addendaSequence++.ToString().PadLeft(4, '0');
-                addenda.EntrySequence = TraceNumber.Substring(8, 7);
+                foreach (Addenda addenda in AddendaList)
+                {
+                    addenda.AddendaSequence = addendaSequence++.ToString().PadLeft(4, '0');
+                    addenda.EntrySequence = TraceNumber.Substring(8, 7);
+                }
             }
 
-            CheckDigit = Entry.GenerateCheckDigit(ReceivingDFI);
+            //this is now the 9th digit of the callers passed in recieving dfi
+            //CheckDigit = Entry.GenerateCheckDigit(ReceivingDFI);
+        }
+
+        public decimal GetAmountDecimal()
+        {
+            return ((decimal)long.Parse(Amount)) / 100;
         }
 
         public static Entry CreateEntry(
@@ -214,21 +225,64 @@ namespace NACHO
             string individualName,
             string discretionaryData)
         {
+
+            if(individualID.Length > INDIVIDUAL_IDENTIFICATION_LENGTH) 
+            {
+                individualID = individualID.Substring(0, INDIVIDUAL_IDENTIFICATION_LENGTH);
+            }
+
+            if (individualName.Length > INDIVIDUAL_NAME_LENGTH)
+            {
+                individualName = individualName.Substring(0, INDIVIDUAL_NAME_LENGTH);
+            }
+
+            if (discretionaryData.Length > DISCRETIONARY_DATA_LENGTH)
+            {
+                discretionaryData = discretionaryData.Substring(0, DISCRETIONARY_DATA_LENGTH);
+            }
+
+            string checkDigit = "";
+            if (receivingDFI.Length >= 9)
+            {
+                checkDigit = receivingDFI.Trim().ToCharArray()[8].ToString();
+                receivingDFI = receivingDFI.Substring(0, 8);
+            }
+
             Entry entry = new Entry(
                 "6",
                 transactionCode,
                 receivingDFI,
-                "",
+                checkDigit,
                 dfiAccount,
-                amount,
-                individualID,
-                individualName,
-                discretionaryData,
+                amount.PadLeft(AMOUNT_LENGTH, '0'),
+                individualID.PadLeft(INDIVIDUAL_IDENTIFICATION_LENGTH),
+                individualName.PadLeft(INDIVIDUAL_NAME_LENGTH),
+                discretionaryData.PadLeft(DISCRETIONARY_DATA_LENGTH),
                 "",
                 "");
 
             entry.AutoGenValues();
             return entry;
-        }        
+        }
+
+        public static Entry CreateEntryDecimal(
+            string transactionCode,
+            string receivingDFI,
+            string dfiAccount,
+            decimal amount,
+            string individualID,
+            string individualName,
+            string discretionaryData)
+        {
+            return CreateEntry(
+                    transactionCode,
+                    receivingDFI,
+                    dfiAccount,
+                    ((long)(amount*100)).ToString(),
+                    individualID,
+                    individualName,
+                    discretionaryData
+                );
+        }     
     }
 }

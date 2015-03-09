@@ -12,41 +12,46 @@ namespace NACHO
     /// </summary>
     public class Batch
     {
-        public const uint HEADER_RECORD_TYPE_LENGTH         = 1;
-        public const uint HEADER_SERVICE_CLASS_LENGTH       = 3;
-        public const uint COMPANY_NAME_LENGTH               = 16;
-        public const uint COMPANY_DISCRETIONARY_DATA_LENGTH = 20;
-        public const uint HCOMPANY_IDENTIFICATION_LENGTH    = 10;
-        public const uint STANDARD_ENTRY_LENGTH             = 3;
-        public const uint COMPANY_ENTRY_LENGTH              = 10;
-        public const uint COMPANY_DESCRIPTION_DATE_LENGTH   = 6;
-        public const uint EFFECTIVE_ENTRY_DATE_LENGTH       = 6;
-        public const uint SETTLEMENT_DATE_LENGTH            = 3;
-        public const uint ORIGINATOR_STATUS_LENGTH          = 1;
-        public const uint HEADER_ORIGINATOR_DFI_LENGTH      = 8;
-        public const uint HEADER_BATCH_NUMBER_LENGTH        = 7;
-        public const uint CONTROL_RECORD_TYPE_LENGTH        = 1;
-        public const uint CONTROL_SERVICE_CLASS_LENGTH      = 3;
-        public const uint ENTRY_COUNT_LENGTH                = 6;
-        public const uint ENTRY_HASH_LENGTH                 = 10;
-        public const uint TOTAL_DEBIT_LENGTH                = 12;
-        public const uint TOTAL_CREDIT_LENGTH               = 12;
-        public const uint CCOMPANY_IDENTIFICATION_LENGTH    = 10;
-        public const uint MESSAGE_AUTH_LENGTH               = 19;
-        public const uint RESERVED_LENGTH                   = 6;
-        public const uint CONTROL_ORIGINATING_DFI_LENGTH    = 8;
-        public const uint CONTROL_BATCH_NUMBER_LENGTH       = 7;
+        public const int HEADER_RECORD_TYPE_LENGTH         = 1;
+        public const int HEADER_SERVICE_CLASS_LENGTH       = 3;
+        public const int COMPANY_NAME_LENGTH               = 16;
+        public const int COMPANY_DISCRETIONARY_DATA_LENGTH = 20;
+        public const int HCOMPANY_IDENTIFICATION_LENGTH    = 10;
+        public const int STANDARD_ENTRY_LENGTH             = 3;
+        public const int COMPANY_ENTRY_LENGTH              = 10;
+        public const int COMPANY_DESCRIPTION_DATE_LENGTH   = 6;
+        public const int EFFECTIVE_ENTRY_DATE_LENGTH       = 6;
+        public const int SETTLEMENT_DATE_LENGTH            = 3;
+        public const int ORIGINATOR_STATUS_LENGTH          = 1;
+        public const int HEADER_ORIGINATOR_DFI_LENGTH      = 8;
+        public const int HEADER_BATCH_NUMBER_LENGTH        = 7;
+        public const int CONTROL_RECORD_TYPE_LENGTH        = 1;
+        public const int CONTROL_SERVICE_CLASS_LENGTH      = 3;
+        public const int ENTRY_COUNT_LENGTH                = 6;
+        public const int ENTRY_HASH_LENGTH                 = 10;
+        public const int TOTAL_DEBIT_LENGTH                = 12;
+        public const int TOTAL_CREDIT_LENGTH               = 12;
+        public const int CCOMPANY_IDENTIFICATION_LENGTH    = 10;
+        public const int MESSAGE_AUTH_LENGTH               = 19;
+        public const int RESERVED_LENGTH                   = 6;
+        public const int CONTROL_ORIGINATING_DFI_LENGTH    = 8;
+        public const int CONTROL_BATCH_NUMBER_LENGTH       = 7;
 
         public const string HEADER_RECORD_TYPE  = "5";
         public const string CONTROL_RECORD_TYPE = "8";
 
-        
-        public string[] SERVICE_CLASS_CODES = {"200",
-                                               "220",
-                                               "225"};
-        //TODO maybe have new const for each of these, like MIXED_DEBIT_CREDIT = SERVICE_CLASS_CODES[0]
-        //TODO do other way, MIXED_DEBIT_CREDIT = "200", SERVICE_CLASS_CODES = {MIXED_DEBIT_CREDIT...
+        public const string SERVICE_CLASS_MIXED_DEBITS_CREDITS = "200";
+        public const string SERVICE_CLASS_CREDIT_ONLY = "220";
+        public const string SERVICE_CLASS_DEBIT_ONLY = "225";
+        public string[] SERVICE_CLASS_CODES = {SERVICE_CLASS_MIXED_DEBITS_CREDITS,
+                                               SERVICE_CLASS_CREDIT_ONLY,
+                                               SERVICE_CLASS_DEBIT_ONLY};
 
+        public const string STANDARD_ENTRY_PPD = "PPD";
+        public const string STANDARD_ENTRY_CCD = "CCD";
+        public const string STANDARD_ENTRY_CTX = "CTX";
+        public const string STANDARD_ENTRY_TEL = "TEL";
+        public const string STANDARD_ENTRY_WEB = "WEB";
         public string[] STANDARD_ENTRY_CODES = {"PPD",
                                                 "CCD",
                                                 "CTX",
@@ -197,6 +202,16 @@ namespace NACHO
                     "' is different than the control batch number '" + ControlBatchNumber + "'";
             }
 
+            if (BatchPrinter.PrintHeader(this).Length != 94)
+            {
+                messages += "\nBatch header is not 94 characters long: '" + BatchPrinter.PrintHeader(this) + "'";
+            }
+
+            if (BatchPrinter.PrintControl(this).Length != 94)
+            {
+                messages += "\nBatch control footer is not 94 characters long: '" + BatchPrinter.PrintControl(this) + "'";
+            }
+
             int entrySequence = 1;
             foreach (Entry entry in Entries)
             {
@@ -268,7 +283,10 @@ namespace NACHO
             foreach (Entry entry in Entries)
             {
                 count++;
-                count += entry.AddendaList.Count;
+                if (entry.AddendaList != null)
+                {
+                    count += entry.AddendaList.Count;
+                }
             }
 
             return count;
@@ -352,22 +370,31 @@ namespace NACHO
             string companyEntry,
             string companyDescriptiveDate,
             string effectiveEntryDate,
-            string settlementDate,
             string originatingDFI,
             int batchNumber)
         {
+            if (companyDiscretionary.Length > COMPANY_DISCRETIONARY_DATA_LENGTH)
+            {
+                companyDiscretionary = companyDiscretionary.Substring(0, COMPANY_DISCRETIONARY_DATA_LENGTH);
+            }
+
+            if (companyDescriptiveDate.Length > COMPANY_DESCRIPTION_DATE_LENGTH)
+            {
+                companyDescriptiveDate = companyDescriptiveDate.Substring(0, COMPANY_DESCRIPTION_DATE_LENGTH);
+            }
+
             Batch batch = new Batch();
             batch.SetHeader(
                 "5",
                 serviceClassCode,
                 companyName,
-                companyDiscretionary,
+                companyDiscretionary.PadLeft(COMPANY_DISCRETIONARY_DATA_LENGTH),
                 companyID,
                 standardEntry,
                 companyEntry,
-                companyDescriptiveDate,
+                companyDescriptiveDate.PadLeft(COMPANY_DESCRIPTION_DATE_LENGTH),
                 effectiveEntryDate,
-                settlementDate,
+                "   ",//set by ACH operator
                 "1",//TODO may not be one but think this always should be
                 originatingDFI,
                 batchNumber.ToString().PadLeft(7, '0'));
@@ -420,7 +447,7 @@ namespace NACHO
             AutoGenValues();
         }
 
-        void AddEntry(Entry entry)
+        public void AddEntry(Entry entry)
         {
             Entries.Add(entry);
             AutoGenValues();

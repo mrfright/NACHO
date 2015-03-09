@@ -47,6 +47,11 @@
             addendaMessage += ExpectedString.CheckNumericWithSpaces("Addenda Sequence", AddendaSequence);
             addendaMessage += ExpectedString.CheckNumericWithSpaces("Entry Detail Sequence", EntrySequence);
 
+            if (AddendaPrinter.PrintAddenda(this).Length != 94)
+            {
+                addendaMessage += "\nAddenda is not 94 characters long: '" + AddendaPrinter.PrintAddenda(this) + "'";
+            }
+
             if (!string.IsNullOrEmpty(addendaMessage))
             {
                 addendaMessage = "Errors in Addenda with " + AddendaPrinter.PrintAddendaVerbose(this) + ": " + addendaMessage;

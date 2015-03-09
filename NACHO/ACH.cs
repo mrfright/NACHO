@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Collections;
+using System;
 
 //doesn't know about files or formatted lines, that's the ACHParser
 
@@ -14,27 +15,27 @@ namespace NACHO
     /// </summary>
     public class ACH
     {
-        public const uint HEADER_RECORD_TYPE_LENGTH         = 1;
-        public const uint PRIORITY_CODE_LENGTH              = 2;
-        public const uint IMMEDIATE_DESTINATION_LENGTH      = 10;
-        public const uint IMMEDIATE_ORIGIN_LENGTH           = 10;
-        public const uint FILE_CREATION_DATE_LENGTH         = 6;
-        public const uint FILE_CREATION_TIME_LENGTH         = 4;
-        public const uint FILE_ID_MODIFIER_LENGTH           = 1;
-        public const uint RECORD_SIZE_LENGTH                = 3;
-        public const uint BLOCKING_FACTOR_LENGTH            = 2;
-        public const uint FORMAT_CODE_LENGTH                = 1;
-        public const uint IMMEDIATE_DESTINATION_NAME_LENGTH = 23;
-        public const uint IMMEDIATE_ORIGIN_NAME_LENGTH      = 23;
-        public const uint REFERENCE_CODE_LENGTH             = 8;
-        public const uint CONTROL_RECORD_TYPE_LENGTH        = 1;
-        public const uint BATCH_COUNT_LEGTH                 = 6;
-        public const uint BLOCK_COUNT_LENGTH                = 6;
-        public const uint ENTRY_ADDENDA_COUNT_LENGTH        = 8;
-        public const uint ENTRY_HASH_LENGTH                 = 10;
-        public const uint TOTAL_DEBIT_LENGTH                = 12;
-        public const uint TOTAL_CREDIT_LENGTH               = 12;
-        public const uint RESERVED_LENGTH                   = 39;
+        public const int HEADER_RECORD_TYPE_LENGTH         = 1;
+        public const int PRIORITY_CODE_LENGTH              = 2;
+        public const int IMMEDIATE_DESTINATION_LENGTH      = 10;
+        public const int IMMEDIATE_ORIGIN_LENGTH           = 10;
+        public const int FILE_CREATION_DATE_LENGTH         = 6;
+        public const int FILE_CREATION_TIME_LENGTH         = 4;
+        public const int FILE_ID_MODIFIER_LENGTH           = 1;
+        public const int RECORD_SIZE_LENGTH                = 3;
+        public const int BLOCKING_FACTOR_LENGTH            = 2;
+        public const int FORMAT_CODE_LENGTH                = 1;
+        public const int IMMEDIATE_DESTINATION_NAME_LENGTH = 23;
+        public const int IMMEDIATE_ORIGIN_NAME_LENGTH      = 23;
+        public const int REFERENCE_CODE_LENGTH             = 8;
+        public const int CONTROL_RECORD_TYPE_LENGTH        = 1;
+        public const int BATCH_COUNT_LEGTH                 = 6;
+        public const int BLOCK_COUNT_LENGTH                = 6;
+        public const int ENTRY_ADDENDA_COUNT_LENGTH        = 8;
+        public const int ENTRY_HASH_LENGTH                 = 10;
+        public const int TOTAL_DEBIT_LENGTH                = 12;
+        public const int TOTAL_CREDIT_LENGTH               = 12;
+        public const int RESERVED_LENGTH                   = 39;
 
         public const string HEADER_RECORD_TYPE             = "1";
         public const string PRIORITY_CODE_EXPECTED_VALUE   = "01";
@@ -120,8 +121,7 @@ namespace NACHO
             Reserved = reservedParam;
         }
 
-        //TODO auto gen, set values that depend on batch entry values
-        void SetAutoValues()
+        public void SetAutoValues()
         {
             int batchNumber = 1;
             foreach (Batch batch in Batches)
@@ -129,7 +129,7 @@ namespace NACHO
                 batch.HeaderCompanyIdentification = ImmediateOrigin;
                 batch.HeaderOriginatorDFI = ImmediateDestination.Substring(1, 8);
                 batch.EffectiveEntryDate = FileCreationDate;
-                batch.HeaderCompanyName = ImmediateOriginName;
+                batch.HeaderCompanyName = ImmediateOriginName.Substring(0, (int)Batch.COMPANY_NAME_LENGTH);
 
                 batch.AutoGenValues(batchNumber++);
             }
@@ -142,7 +142,6 @@ namespace NACHO
             TotalCredit = GenerateTotalCredit().ToString().PadLeft(12, '0');
         }
 
-        //TODO verif
         public string Verify()
         {
             string messages = "";
@@ -175,9 +174,16 @@ namespace NACHO
             messages += LengthCheck.CheckLength("Total Credit", TotalCredit, TOTAL_CREDIT_LENGTH);
             messages += LengthCheck.CheckLength("Reserved", Reserved, RESERVED_LENGTH);
 
-            //TODO verify batches            
+            if (ACHPrinter.PrintHeader(this).Length != 94)
+            {
+                messages += "\nACH header is not 94 characters long: '" + ACHPrinter.PrintHeader(this) + "'";
+            }
 
-            //TODO verify autogen values/values in both header and control are correct
+            if (ACHPrinter.PrintControl(this).Length != 94)
+            {
+                messages += "\nACH control footer is not 94 characters long: '" + ACHPrinter.PrintControl(this) + "'";
+            }
+
             foreach (Batch batch in Batches)
             {
                 string batchMessage = batch.Verify();
@@ -352,9 +358,70 @@ namespace NACHO
             return totalCredit;
         }
 
-        //TODO create ach with min needed values, autogen
+        public static ACH CreateACH(
+            string internalString,
+            string immediateDestination,
+            string immediateOrigin,
+            string fileIDModifier,
+            string immediateDestinationName,
+            string immediateOriginName,
+            string referenceCode
+            )
+        {
+            string date = DateTime.Now.ToString("yyMMdd");
+            string time = DateTime.Now.ToString("HHmm");
 
-        //TODO add batch (calls auto set values)
+            if (immediateDestinationName.Length > IMMEDIATE_DESTINATION_NAME_LENGTH)
+            {
+                immediateDestinationName = immediateDestinationName.Substring(0, (int)IMMEDIATE_DESTINATION_NAME_LENGTH);
+            }
 
+            if (immediateOriginName.Length > IMMEDIATE_ORIGIN_NAME_LENGTH)
+            {
+                immediateOriginName = immediateOriginName.Substring(0, (int)IMMEDIATE_ORIGIN_NAME_LENGTH);
+            }
+
+            if (referenceCode.Length > REFERENCE_CODE_LENGTH)
+            {
+                referenceCode = referenceCode.Substring(0, (int)REFERENCE_CODE_LENGTH);
+            }
+
+            ACH ach = new ACH();
+            ach.SetHeader(
+                internalString,
+                "1",
+                "01",
+                immediateDestination,
+                immediateOrigin,
+                date,
+                time,
+                fileIDModifier,
+                "094",
+                "10",
+                "1",
+                immediateDestinationName.PadLeft((int)IMMEDIATE_DESTINATION_NAME_LENGTH, ' '),
+                immediateOriginName.PadLeft((int)IMMEDIATE_ORIGIN_NAME_LENGTH, ' '),
+                referenceCode.PadLeft((int)REFERENCE_CODE_LENGTH, ' '));
+
+            ach.SetControl(
+                "9",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "".PadLeft((int)RESERVED_LENGTH));
+
+            ach.SetAutoValues();
+
+            return ach;
+        }
+
+        public void AddBatch(Batch batch)
+        {
+            Batches.Add(batch);
+            SetAutoValues();
+        }
     }
 }
