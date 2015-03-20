@@ -129,7 +129,7 @@ namespace NACHO
                 batch.HeaderCompanyIdentification = ImmediateOrigin;
                 batch.HeaderOriginatorDFI = ImmediateDestination.Substring(1, 8);
                 batch.EffectiveEntryDate = FileCreationDate;
-                batch.HeaderCompanyName = ImmediateOriginName.Substring(0, (int)Batch.COMPANY_NAME_LENGTH);
+                batch.HeaderCompanyName = ImmediateOriginName.Trim().Substring(0, (int)Batch.COMPANY_NAME_LENGTH);
 
                 batch.AutoGenValues(batchNumber++);
             }
