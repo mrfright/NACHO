@@ -26,6 +26,7 @@ namespace nachodump
                 //TODO verify ach
                 System.Console.WriteLine(messages);
                 System.Console.WriteLine("\n"+ACHPrinter.PrintACH(ach));
+                System.Console.WriteLine(ach.Verify());
 
                 Entry entry = new Entry(
                     "6",
@@ -43,7 +44,7 @@ namespace nachodump
                 entry.CheckDigit = Entry.GenerateCheckDigit(entry.ReceivingDFI);
 
 
-                Entry myEntry = Entry.CreateEntry(Entry.DEBIT_FOR_CHECKING, "012345678", "12345678901234567", "1000", "playerid1234", "jon doe", "");
+                Entry myEntry = Entry.CreateEntry(Entry.DEBIT_FOR_CHECKING, "012345678", "12345678901234567", "1000", "personid1234", "jon doe", "");
                 Batch batch = Batch.CreateBatch(Batch.SERVICE_CLASS_DEBIT_ONLY, "", "", "", Batch.STANDARD_ENTRY_PPD, "Wlfare Pln", "", "", "", 0);
                 batch.AddEntry(myEntry);
                 ACH myach = ACH.CreateACH("", " 123456789", "0123456789", "A", "my bank", "my company", "");
