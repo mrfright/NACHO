@@ -316,7 +316,7 @@ namespace NACHO
                 blockCount++;
             }
 
-            return count;
+            return blockCount;
         }
 
         public int GenerateEntryAddendaCount()
