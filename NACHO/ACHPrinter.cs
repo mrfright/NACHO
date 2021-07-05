@@ -1,65 +1,57 @@
-﻿namespace NACHO
+﻿using System;
+using System.Text;
+
+namespace NACHO
 {
     public class ACHPrinter
     {
-        public static string PrintInternal(ACH ach)
-        {
-            return ach.InternalString;
-        }
-
-        public static string PrintHeader(ACH ach)
-        {
-            return ach.HeaderRecordTypeCode
-                 + ach.PriorityCode
-                 + ach.ImmediateDestination
-                 + ach.ImmediateOrigin
-                 + ach.FileCreationDate
-                 + ach.FileCreationTime
-                 + ach.FileIdModifier
-                 + ach.RecordSize
-                 + ach.BlockingFactor
-                 + ach.FormatCode
-                 + ach.ImmediateDestinationName
-                 + ach.ImmediateOriginName
-                 + ach.ReferenceCode;
-        }
-
-        public static string PrintControl(ACH ach)
-        {
-            return ach.ControlRecordTypeCode
-                 + ach.BatchCount
-                 + ach.BlockCount
-                 + ach.EntryAddendaCount
-                 + ach.EntryHash
-                 + ach.TotalDebit
-                 + ach.TotalCredit
-                 + ach.Reserved;
-        }
-
         public static string PrintACH(ACH ach)
         {
-            string achString = "";
+            var achBuilder = new StringBuilder();
+
             if (!string.IsNullOrEmpty(ach.InternalString))
-            {
-                achString += PrintInternal(ach) + "\n";
-            }
-            achString += PrintHeader(ach);
-            achString += "\n" + PrintBatches(ach);
-            achString += "\n"+PrintControl(ach);
-            return achString;
+                PrintInternal(ach, achBuilder);
+
+            PrintHeader(ach, achBuilder);
+            PrintBatches(ach, achBuilder);
+            PrintControl(ach, achBuilder);
+            CompleteLastBlock(ach, achBuilder);
+
+            return achBuilder.ToString();
+        }        
+
+        public static void PrintInternal(ACH ach, StringBuilder achBuilder)
+        {
+            achBuilder.AppendLine(ach.InternalString);
         }
 
-        public static string PrintBatches(ACH ach)
+        public static void PrintHeader(ACH ach, StringBuilder achBuilder)
         {
-            string batchStr = "";
-            string prepend = "";
+            achBuilder.AppendLine(ach.GetHeader());
+        }        
+
+        public static void PrintBatches(ACH ach, StringBuilder achBuilder)
+        {
             foreach (Batch batch in ach.Batches)
             {
-                batchStr += prepend + BatchPrinter.PrintBatch(batch);
-                prepend = "\n";
+                achBuilder.AppendLine(BatchPrinter.PrintBatch(batch));
             }
+        }
 
-            return batchStr;
+        public static void PrintControl(ACH ach, StringBuilder achBuilder)
+        {
+            achBuilder.AppendLine(ach.GetControl());
+        }
+
+        private static void CompleteLastBlock(ACH ach, StringBuilder achBuilder)
+        {
+            var totalNumberOfLines = int.Parse(ach.BlockingFactor) * int.Parse(ach.BlockCount);
+            var printedNumberOfLines = ach.GetTotalLinesCount();
+
+            var blockFiller = new string('9', int.Parse(ach.RecordSize));
+
+            for (var i = 0; i < totalNumberOfLines - printedNumberOfLines; i++)
+                achBuilder.AppendLine(blockFiller);
         }
     }
 }
