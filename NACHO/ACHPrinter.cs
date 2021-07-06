@@ -45,8 +45,8 @@ namespace NACHO
 
         private static void CompleteLastBlock(ACH ach, StringBuilder achBuilder)
         {
-            var totalNumberOfLines = int.Parse(ach.BlockingFactor) * int.Parse(ach.BlockCount);
-            var printedNumberOfLines = ach.GetTotalLinesCount();
+            var totalNumberOfLines = ach.GetTotalLinesCount();
+            var printedNumberOfLines = ach.GetDataLinesCount();
 
             var blockFiller = new string('9', int.Parse(ach.RecordSize));
 

@@ -334,7 +334,7 @@ namespace NACHO
         /// <returns>Block count</returns>
         public int GenerateBlockCount()
         {
-            var linesCount = GetTotalLinesCount();
+            var linesCount = GetDataLinesCount();
 
             int blockCount = linesCount / 10;//'Blocking Factor' from ACH header, but always 10 any way
             if (linesCount % 10 > 0)
@@ -345,7 +345,7 @@ namespace NACHO
             return blockCount;
         }
 
-        public int GetTotalLinesCount()
+        public int GetDataLinesCount()
         {
             int count = 2;//ACH file header and control
 
@@ -466,6 +466,21 @@ namespace NACHO
         {
             Batches.Add(batch);
             SetAutoValues();
+        }
+
+        public int GetIntBlockCount()
+        {
+            return int.Parse(BlockCount);
+        }
+
+        public int GetIntBlockingFactorCount()
+        {
+            return int.Parse(BlockingFactor);
+        }
+
+        public int GetTotalLinesCount()
+        {
+            return GetIntBlockCount() * GetIntBlockingFactorCount();
         }
     }
 }
