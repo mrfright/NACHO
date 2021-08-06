@@ -6,12 +6,12 @@ namespace NACHO
 {
     public class ACHParser
     {
-        public const uint ACH_HEADER_RECORD_TYPE_ASCII_VALUE    = 49;
-        public const uint BATCH_HEADER_RECORD_TYPE_ASCII_VALUE  = 53;
-        public const uint ENTRY_RECORD_TYPE_ASCII_VALUE         = 54;
-        public const uint ADDENDA_RECORD_TYPE_ASCII_VALUE       = 55;
+        public const uint ACH_HEADER_RECORD_TYPE_ASCII_VALUE = 49;
+        public const uint BATCH_HEADER_RECORD_TYPE_ASCII_VALUE = 53;
+        public const uint ENTRY_RECORD_TYPE_ASCII_VALUE = 54;
+        public const uint ADDENDA_RECORD_TYPE_ASCII_VALUE = 55;
         public const uint BATCH_CONTROL_RECORD_TYPE_ASCII_VALUE = 56;
-        public const uint ACH_CONTROL_RECORD_TYPE_ASCII_VALUE   = 57;
+        public const uint ACH_CONTROL_RECORD_TYPE_ASCII_VALUE = 57;
 
         //parse whole file, calls batch parser, returns new ach
         public static ACH ParseStream(System.IO.StreamReader reader, out string messages)
@@ -94,6 +94,7 @@ namespace NACHO
                                 uint linesRead = 0;
                                 Batch batch = BatchParser.ParseStream(reader, out batchMessages, out linesRead, currentLineNumber);
                                 messages += batchMessages;
+                                currentLineNumber += linesRead;
 
                                 if (batch != null)
                                 {
@@ -128,12 +129,33 @@ namespace NACHO
                                 }
                             }
 
+                            var totalLinesCount = ach.GetTotalLinesCount();
+                            var blockFiller = new string('9', int.Parse(ach.RecordSize));
+                            while (currentLineNumber <= totalLinesCount)
+                            {
+                                var line = reader.ReadLine();
+                                if (line != null)
+                                {
+                                    if (line != blockFiller)
+                                    {
+                                        messages += "\nInvalid block filler on line " + currentLineNumber.ToString() + ": '" + line + "'";
+                                        break;
+                                    }
+                                    currentLineNumber++;
+                                }
+                                else
+                                {
+                                    messages += "\nUnexpected end of file, number of lines do not match ACH header";
+                                    break;
+                                }
+                            }
+
                             didNotRecieveEntry = false;
                         }
                     }
                     else
                     {
-                        messages += "\nReceived what looks like a batch, entry, or ACH control unexpectedly before an ACH header on line "+currentLineNumber.ToString()+": '" + reader.ReadLine() + "'";
+                        messages += "\nReceived what looks like a batch, entry, or ACH control unexpectedly before an ACH header on line " + currentLineNumber.ToString() + ": '" + reader.ReadLine() + "'";
                         ++currentLineNumber;
                     }
                 }

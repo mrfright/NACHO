@@ -69,6 +69,23 @@ namespace NACHO
 
         public List<Batch> Batches = new List<Batch>();
 
+        public string GetHeader()
+        {
+            return HeaderRecordTypeCode
+                 + PriorityCode
+                 + ImmediateDestination
+                 + ImmediateOrigin
+                 + FileCreationDate
+                 + FileCreationTime
+                 + FileIdModifier
+                 + RecordSize
+                 + BlockingFactor
+                 + FormatCode
+                 + ImmediateDestinationName
+                 + ImmediateOriginName
+                 + ReferenceCode;
+        }
+
         public void 
         SetHeader(string internalStringParam,
             string headerRecordTypeCodeParam,
@@ -99,6 +116,18 @@ namespace NACHO
             ImmediateDestinationName = immediateDestinationNameParam;            
             ImmediateOriginName = immediateOriginNameParam;            
             ReferenceCode = referenceCodeParam;
+        }
+
+        public string GetControl()
+        {
+            return ControlRecordTypeCode
+                 + BatchCount
+                 + BlockCount
+                 + EntryAddendaCount
+                 + EntryHash
+                 + TotalDebit
+                 + TotalCredit
+                 + Reserved;
         }
 
         public void 
@@ -180,14 +209,16 @@ namespace NACHO
             messages += LengthCheck.CheckLength("Total Credit", TotalCredit, TOTAL_CREDIT_LENGTH);
             messages += LengthCheck.CheckLength("Reserved", Reserved, RESERVED_LENGTH);
 
-            if (ACHPrinter.PrintHeader(this).Length != 94)
+            var header = GetHeader();
+            if (header.Length != 94)
             {
-                messages += "\nACH header is not 94 characters long: '" + ACHPrinter.PrintHeader(this) + "'";
+                messages += "\nACH header is not 94 characters long: '" + header + "'";
             }
 
-            if (ACHPrinter.PrintControl(this).Length != 94)
+            var control = GetControl();
+            if (control.Length != 94)
             {
-                messages += "\nACH control footer is not 94 characters long: '" + ACHPrinter.PrintControl(this) + "'";
+                messages += "\nACH control footer is not 94 characters long: '" + control + "'";
             }
 
             foreach (Batch batch in Batches)
@@ -303,17 +334,24 @@ namespace NACHO
         /// <returns>Block count</returns>
         public int GenerateBlockCount()
         {
+            var linesCount = GetDataLinesCount();
+
+            int blockCount = linesCount / 10;//'Blocking Factor' from ACH header, but always 10 any way
+            if (linesCount % 10 > 0)
+            {
+                blockCount++;
+            }
+
+            return blockCount;
+        }
+
+        public int GetDataLinesCount()
+        {
             int count = 2;//ACH file header and control
 
             foreach (Batch batch in Batches)
             {
                 count += batch.EntryAddendaCount() + 2;//+2 for batch header and control
-            }
-
-            int blockCount = count / 10;//'Blocking Factor' from ACH header, but always 10 any way
-            if (count % 10 > 0)
-            {
-                blockCount++;
             }
 
             return count;
@@ -428,6 +466,21 @@ namespace NACHO
         {
             Batches.Add(batch);
             SetAutoValues();
+        }
+
+        public int GetIntBlockCount()
+        {
+            return int.Parse(BlockCount);
+        }
+
+        public int GetIntBlockingFactorCount()
+        {
+            return int.Parse(BlockingFactor);
+        }
+
+        public int GetTotalLinesCount()
+        {
+            return GetIntBlockCount() * GetIntBlockingFactorCount();
         }
     }
 }
