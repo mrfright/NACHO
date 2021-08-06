@@ -146,6 +146,7 @@ namespace NACHO
                                 else
                                 {
                                     messages += "\nUnexpected end of file, number of lines do not match ACH header";
+                                    break;
                                 }
                             }
 
